@@ -93,14 +93,15 @@ public class NFCReadFragment extends DialogFragment {
             ndef.connect();
             NdefMessage ndefMessage = ndef.getNdefMessage();
             String message = new String(ndefMessage.getRecords()[0].getPayload());
-            if(message.equals(Main2Activity.currentpoint.getId())){
+            int checkPointId = Integer.parseInt(message);
+            if(checkPointId == Main2Activity.currentPoint.getId()){
                 mTvMessage.setText("Bir sorun var mı?");
                 vr.setVisibility(View.VISIBLE);
                 yk.setVisibility(View.VISIBLE);
             }
             else
                 mTvMessage.setText("Yanlış Kontrol Noktası!");
-            Log.d(TAG, "readFromNFC: "+message);
+            Log.d(TAG, "readFromNFC: "+message+", checkPointId: " + checkPointId);
 
             ndef.close();
 

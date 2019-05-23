@@ -11,9 +11,15 @@
     android:gravity="center"
     tools:context=".tasks">
 
-
-    <ExpandableListView
-        android:id="@+id/lvExp"
+    <android.support.v4.widget.SwipeRefreshLayout
+        android:id="@+id/pullToRefreshTasks"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"></ExpandableListView>
+        android:layout_height="wrap_content">
+
+        <ExpandableListView
+            android:id="@+id/lvExp"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"></ExpandableListView>
+
+    </android.support.v4.widget.SwipeRefreshLayout>
 </RelativeLayout>

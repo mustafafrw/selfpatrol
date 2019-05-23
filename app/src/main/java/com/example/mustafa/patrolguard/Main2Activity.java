@@ -16,6 +16,9 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.mustafa.patrolguard.models.Checkpoint;
+import com.example.mustafa.patrolguard.models.Task;
+
 public class Main2Activity extends AppCompatActivity implements Listener{
 
     public static final String TAG = Main2Activity.class.getSimpleName();
@@ -32,7 +35,8 @@ public class Main2Activity extends AppCompatActivity implements Listener{
 
     private NfcAdapter mNfcAdapter;
 
-    public static CheckPoint currentpoint;
+    public static Checkpoint currentPoint;
+    public static Task currentTask;
     TextView checkT;
     TextView taskT;
     @Override
@@ -43,8 +47,8 @@ public class Main2Activity extends AppCompatActivity implements Listener{
         checkT = findViewById(R.id.checkp);
         taskT = findViewById(R.id.taskn);
 
-        checkT.setText(currentpoint.getName());
-        taskT.setText(currentpoint.getTask_name());
+        checkT.setText(currentPoint.getCheckpoint_name());
+        taskT.setText(currentTask.getTask_name());
 
         initViews();
         initNFC();
@@ -56,12 +60,6 @@ public class Main2Activity extends AppCompatActivity implements Listener{
         mBtWrite = (Button) findViewById(R.id.btn_write);
         mBtRead = (Button) findViewById(R.id.btn_read);
 
-        mBtWrite.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                showWriteFragment();
-            }
-        });
         mBtRead.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -75,21 +73,6 @@ public class Main2Activity extends AppCompatActivity implements Listener{
     private void initNFC(){
 
         mNfcAdapter = NfcAdapter.getDefaultAdapter(this);
-    }
-
-
-    private void showWriteFragment() {
-
-        isWrite = true;
-
-        mNfcWriteFragment = (NFCWriteFragment) getFragmentManager().findFragmentByTag(NFCWriteFragment.TAG);
-
-        if (mNfcWriteFragment == null) {
-
-            mNfcWriteFragment = NFCWriteFragment.newInstance();
-        }
-        mNfcWriteFragment.show(getFragmentManager(),NFCWriteFragment.TAG);
-
     }
 
     private void showReadFragment() {

@@ -2,8 +2,10 @@ package com.example.mustafa.patrolguard;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
+import android.widget.CheckBox;
 import android.widget.ExpandableListView;
 
 import com.android.volley.Request;
@@ -13,107 +15,99 @@ import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonArrayRequest;
 import com.android.volley.toolbox.Volley;
 
+import com.example.mustafa.patrolguard.models.Checkpoint;
+import com.example.mustafa.patrolguard.models.Task;
+import com.example.mustafa.patrolguard.adapters.ExpandListViewAdapter;
+import com.google.gson.Gson;
+
 import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 public class tasks extends AppCompatActivity {
-
+    SwipeRefreshLayout pullToRefreshTasks;
     private ExpandableListView listView;
-    private ExpandableListAdapter listAdapter;
-    private List<String> listDataHeader;
-    private HashMap<String,List<String>> listHash;
-    public static String userId="1";
-    public static HashMap<String,CheckPoint> checkwithIds;
+    private ExpandListViewAdapter listAdapter;
+
+    private List<Checkpoint> listDataHeader;
+
+    public static String userId = "1";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.activity_tasks);
 
-        checkwithIds = new HashMap<>();
-        listView = (ExpandableListView)findViewById(R.id.lvExp);
-
-
+        pullToRefreshTasks = findViewById(R.id.pullToRefreshTasks);
+        listDataHeader = new ArrayList<>();
         getTasks();
-       // initData();
-        listAdapter = new ExpandableListAdapter(getBaseContext(),listDataHeader,listHash);
-        System.out.println("savedInstanceStatex = [" + listDataHeader.size() + "]");
+
+        listAdapter = new ExpandListViewAdapter(getApplicationContext(), listDataHeader);
+
+        listView = findViewById(R.id.lvExp);
+        listView.setClickable(true);
+        listView.setAdapter(listAdapter);
 
         listView.setOnChildClickListener(new ExpandableListView.OnChildClickListener() {
             @Override
             public boolean onChildClick(ExpandableListView parent, View v, int groupPosition, int childPosition, long id)
             {
                 System.out.println("tiklandi");
-                System.out.println("parent = [" + parent + "], v = [" + v + "], groupPosition = [" + groupPosition + "], childPosition = [" + childPosition + "], id = [" + id + "]");
 
-              /*  Object childName = listAdapter.getChild(groupPosition,childPosition);
-                Object parentName = listAdapter.getGroup(groupPosition);*/
-                CheckPoint cp = checkwithIds.get(String.valueOf(groupPosition)+"-"+String.valueOf(childPosition));
+                Checkpoint checkpoint = listDataHeader.get(groupPosition);
+                Task task = checkpoint.getTasks().get(childPosition);
 
-                Main2Activity.currentpoint =cp;
+                Main2Activity.currentPoint = checkpoint;
+                Main2Activity.currentTask = task;
 
-                Intent intent = new Intent(getApplicationContext(),Main2Activity.class);
-                startActivity(intent);
+                if (task.getStatus() != 1) {
+                    Intent intent = new Intent(getApplicationContext(), Main2Activity.class);
+                    startActivity(intent);
+                }
 
                 return false;
             }
+        });
 
+        pullToRefreshTasks.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                listDataHeader.clear();
+                listAdapter.notifyDataSetChanged();
+                System.out.println("refreshx");
+                System.out.println("task count1=" + listDataHeader.size());
+                getTasks();
+                System.out.println("task count2=" + listDataHeader.size());
+                //pullToRefreshTasks.setRefreshing(false);
+            }
         });
     }
 
     private void getTasks()
     {
-        listDataHeader = new ArrayList<>();
-        listHash = new HashMap<>();
-
+        pullToRefreshTasks.setRefreshing(true);
         RequestQueue requestQueue = Volley.newRequestQueue(getApplicationContext());
 
-        JsonArrayRequest reqget = new JsonArrayRequest (Request.Method.GET,
+
+        JsonArrayRequest reqget = new JsonArrayRequest(Request.Method.GET,
                 "http://evirgenmert.com/personnel/taskList/1",
                 null, new Response.Listener<JSONArray>() {
             @Override
             public void onResponse(JSONArray response) {
 
-                for(int i=0;i<response.length();i++) {
+                Gson gson = new Gson();
+                Checkpoint[] checkpoints = gson.fromJson(response.toString(), Checkpoint[].class);
 
-                    try {
-                        JSONObject checkPointList = response.getJSONObject(i);
+                for (Checkpoint c: checkpoints) {
+                    listDataHeader.add(c);
+                    listAdapter.notifyDataSetChanged();
 
+                }
 
-
-                        JSONArray taskList = checkPointList.getJSONArray("tasks");
-
-                        List<String> taskNames = new ArrayList<>();
-                        for(int j=0;j< taskList.length();j++)
-                        {
-                            JSONObject taskObj = taskList.getJSONObject(j);
-                            String checkhed="";
-                            if(taskObj.getString("status").equals("0"))
-                                checkhed="^";
-                            taskNames.add(taskObj.getString("task_name")+checkhed);
-
-                            CheckPoint cp = new CheckPoint();
-                            cp.setId(checkPointList.getString("id"));
-                            cp.setId_task(taskObj.getString("id_task"));
-                            cp.setTask_name(taskObj.getString("task_name"));
-                            cp.setName(checkPointList.getString("checkpoint_name"));
-                            cp.setArea_name(checkPointList.getString("area_name"));
-                            checkwithIds.put(String.valueOf(i)+"-"+String.valueOf(j),cp);
-                        }
-
-                        listDataHeader.add(checkPointList.getString("checkpoint_name")+" - "+checkPointList.getString("area_name"));
-                        listHash.put(listDataHeader.get(i),taskNames);
-
-                        listView.setAdapter(listAdapter);
-
-                    } catch (JSONException e) {
-                        System.out.println("responsex = [" + e.getMessage() + "]");
-                    }
+                for (Checkpoint l: listDataHeader){
+                    System.out.println("updatex: " + l.getCheckpoint_name());
                 }
             }
 
@@ -130,6 +124,9 @@ public class tasks extends AppCompatActivity {
         );
 
         requestQueue.add(reqget);
+        pullToRefreshTasks.setRefreshing(false);
+
+
 
         // Toast.makeText(this,getKeyByValue(taskId,String.valueOf(task.getSelectedItem())),Toast.LENGTH_LONG).show();
         /*String task_id = getKeyByValue(taskId,(String)(task.getSelectedItem()));
